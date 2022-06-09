@@ -1,142 +1,60 @@
-// Desafio 2
-const fs = require('fs');
+    const express = require("express");
+    const fs = require("fs");
+    const app = express();
+    const port = 8080;
+    let fecha = new Date();
 
-class Contenedor {
-
-    constructor(nombreArchivo) {
-        this.nombreArchivo = nombreArchivo
-        async function exe() {
-            await fs.promises.readFile(`./${nombreArchivo}`, 'utf-8')
-                .then(async (data) => {
-                    if(data.length === 0){
-                        console.log('el archivo esta vacio')
-                        await fs.promises.writeFile(`./${nombreArchivo}`, '[]')
-                    }
-                })
-                .catch(async (err) => {
-                    console.log('se ha creado el archivo')
-                    await fs.promises.writeFile(`./${nombreArchivo}`, '[]')
-                })
-        }
-        exe();
+    class Contenedor {
+    constructor(archivo) {
+        this.archivo = archivo;
     }
-
-    save(obj) {
-        setTimeout(async () => {
-            let archivo = await fs.promises.readFile(`./${this.nombreArchivo}`, 'utf-8')
-            archivo = JSON.parse(archivo);
-            if (archivo.length === 0) {
-                const nuevoObj = {
-                    ...obj,
-                    id: 1
-                }
-                archivo.push(nuevoObj)
-                let data = JSON.stringify(archivo);
-                await fs.promises.writeFile(`./${this.nombreArchivo}`, data);
-                try {
-                    console.log(`Se ha guardado el archivo, id: ${nuevoObj.id}`);
-                } catch (error) {
-                    console.log(` ocurrio un error ${error}`)
-                }
-            } else {
-                const nuevoObj = {
-                    ...obj,
-                    id: archivo.length + 1
-                }
-                archivo.push(nuevoObj)
-                let data = JSON.stringify(archivo);
-                await fs.promises.writeFile(`./${this.nombreArchivo}`, data);
-                try {
-                    console.log(`Se ha guardado el archivo, id: ${nuevoObj.id}`);
-                } catch (error) {
-                    console.log(` ocurrio un error ${error}`)
-                }
-            }
-        }), 1000
-    };
-
-    getById(id) {
-        setTimeout(async () => {
-            let archivo = await fs.promises.readFile(`./${this.nombreArchivo}`, 'utf-8')
-            archivo = JSON.parse(archivo);
-            let obj = archivo.find(obj => obj.id === id)
-            if (obj) {
-                console.log(obj);
-            } else {
-                console.log(null)
-            }
-        }), 1000
-    }
-
 
     async getAll() {
-        let archivo = await fs.promises.readFile(`./${this.nombreArchivo}`, 'utf-8');
-        archivo = JSON.parse(archivo);
-        return console.log(archivo);
-    }
-
-    async deleteById(id) {
-        let archivo = await fs.promises.readFile(`./${this.nombreArchivo}`, 'utf-8');
-        archivo = JSON.parse(archivo);
-        let newArr = archivo.findIndex(obj => obj.id == id);
-        if(newArr === -1){
-            console.log('no se ha encontrado el archivo')
-        }else{
-            archivo.splice(newArr, 1);
-            archivo = JSON.stringify(archivo);
-            await fs.promises.writeFile(`./${this.nombreArchivo}`, archivo);
-            console.log('se ha borrado el archivo')
+        try {
+        return JSON.parse(
+            await fs.promises.readFile(`./desafio3/${this.archivo}`, "utf-8")
+        );
+        } catch (error) {
+        console.log("[[[ error desde metodo getAll ]]]", error);
         }
     }
-
-    async deleteAll() {
-            console.log('se estan borrando los objetos')
-            await fs.promises.writeFile(`./${this.nombreArchivo}`, '[]')
-            console.log('archivo reseteado con exito')
-        
     }
-}
-/* ----------------------------------------------- */
-/* COMANDO PARA CREAR EL ARCHIVO */
-const productos = new Contenedor('archivo.txt');
 
-
-/* ARR DE OBJ */
-const arrProducts = [
-    {
-        nombre: 'producto1',
-        precio: '400'
-    },
-    {
-        nombre: 'producto2',
-        precio: '500'
-    },
-    {
-        nombre: 'producto3',
-        precio: '600'
+    app.listen(port, () => {
+    try {
+        console.log(`Servidor iniciado en puerto ${port}`);
+    } catch (err) {
+        console.log( err);
     }
-] 
+    });
+
+    app.get("/", (req, res) => {
+    res.send(` <h1 style="color: blue" >Bienvenido</h1> `);
+    });
+
+    app.get("/productos", async (req, res) => {
+    let productos = await new Contenedor("productos.txt").getAll();
+
+    res.send(
+        `<h1>PRODUCTOS</h1> <ul  style="list-style: none" > ${productos.map(
+        (prod) => {
+            let card = `<li><img src='${prod.thumbnail}' style="width: 30px" />${prod.title}, <br> Precio:$ ${prod.price}</li>`;
+
+            return card;
+        }
+        )}</ul>`
+    );
+    });
+
+    app.get("/productoRandom", async (req, res) => {
+    let productos = await new Contenedor("productos.txt").getAll();
+
+    let random = Math.floor(Math.random() * productos.length);
+
+    res.send(
+        `<img src='${productos[random].thumbnail}' style="width: 100px" /><br>${productos[random].title}, <br> Precio:$ ${productos[random].price}`
+    );
+    });
+    
 
 
-/* FOR PARA AGREGAR MAS DE UN ELEMENTO A LA VEZ */
-for(let i = 0; i < arrProducts.length; i++){
-    setTimeout(() => {
-    productos.save(arrProducts[i])
-    }, 1000 * i)
-}
-
-
-/* DEVUELVE EL ELEMENTO SEGUN EL ID QUE SE LE PASA */
-productos.getById(3)
-
-
-/* DEVUELVE EL ARR CON TODOS LOS OBJ */
-productos.getAll();
-
-
-/* ELIMINA EL OBJ SEGUN EL ID QUE SE LE PASA */
-productos.deleteById(2); 
-
-
-/* RESETEA EL ARR A [] */
- productos.deleteAll(); 
